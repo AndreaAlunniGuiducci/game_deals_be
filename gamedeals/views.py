@@ -3,7 +3,11 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
-from .serializers import DealsListSerializer
+from rest_framework import generics
+from django.contrib.auth.models import User
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import DealsListSerializer, UserSerializer
 from .models import DealsList
 from .services import DealListService
 
@@ -82,3 +86,11 @@ class DealsListViewSet(viewsets.ModelViewSet):
             "count": len(formatted_deals),
             "deals": formatted_deals
         })
+
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    permission_classes = [AllowAny]
+    serializer_class = UserSerializer
+
+class LoginView(TokenObtainPairView):
+    permission_classes = [AllowAny]

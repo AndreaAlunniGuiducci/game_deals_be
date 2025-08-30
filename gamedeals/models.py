@@ -48,6 +48,7 @@ class SyncLog(models.Model):
     
     def __str__(self):
         return f"{self.sync_type} - {self.status} - {self.created_at}"
-    
+
+  
 
     
