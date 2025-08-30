@@ -15,8 +15,12 @@ class DealsListViewSet(viewsets.ModelViewSet):
     queryset = DealsList.objects.all()
     serializer_class = DealsListSerializer
     
-    def list(self, request):
+    def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        
+        print("USER AUTHENTICATED?", request.user)
+        if not request.user.is_authenticated:
+            queryset = queryset[:3]
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
     
