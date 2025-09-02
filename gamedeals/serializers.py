@@ -1,8 +1,12 @@
 from rest_framework import serializers
-from .models import DealsList, SyncLog
+from .models import DealsList, SyncLog, StoreInfo
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 
+class StoreInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StoreInfo
+        fields = '__all__'
 class DealsListSerializer(serializers.ModelSerializer):
     
     class Meta:

@@ -2,6 +2,7 @@ from django.db import models
 
 class DealsList(models.Model):
     external_id = models.CharField(max_length=100, unique=True)
+    store = models.ForeignKey('StoreInfo', on_delete=models.CASCADE, null=True)  
     game_name = models.CharField(max_length=200)
     image_url = models.URLField(max_length=500)
     sale_price = models.DecimalField(max_digits=6, decimal_places=2)
@@ -18,7 +19,7 @@ class GameDetails(models.Model):
         return self.game_name
     
 class StoreInfo(models.Model):
-    store_id = models.IntegerField()
+    store_id = models.CharField(max_length=10, unique=True)
     store_name = models.CharField(max_length=100)
     def __str__(self):
         return self.store_name

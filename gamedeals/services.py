@@ -17,7 +17,9 @@ class DealListService:
             response.raise_for_status()
             
             games_data = response.json()
+                    
             logger.info(f"Recuperati {len(games_data)} giochi dall'API")
+            
             return games_data
             
         except requests.RequestException as e:
@@ -33,3 +35,18 @@ class DealListService:
         except requests.RequestException as e:
             logger.error(f"Errore nel recupero del gioco {game_id}: {e}")
             return None
+        
+class StoreListService:
+    BASE_URL = "https://www.cheapshark.com/api/1.0/stores"
+    
+    @classmethod
+    def fetch_stores(cls) -> List[Dict]:
+        try:
+            response = requests.get(cls.BASE_URL, timeout=10)
+            response.raise_for_status()
+            stores_data = response.json()
+            logger.info(f"Recuperati {len(stores_data)} negozi dall'API")
+            return stores_data
+        except requests.RequestException as e:
+            logger.error(f"Errore nel recupero dei negozi: {e}")
+            return []
