@@ -8,7 +8,7 @@ class StoreInfoSerializer(serializers.ModelSerializer):
         model = StoreInfo
         fields = '__all__'
 class DealsListSerializer(serializers.ModelSerializer):
-    
+    store = StoreInfoSerializer(read_only=True)
     class Meta:
         model = DealsList
         fields = '__all__'

@@ -21,6 +21,9 @@ class GameDetails(models.Model):
 class StoreInfo(models.Model):
     store_id = models.CharField(max_length=10, unique=True)
     store_name = models.CharField(max_length=100)
+    store_logo_url = models.URLField(max_length=500, blank=True)
+    store_banner_url = models.URLField(max_length=500, blank=True)
+    store_icon_url = models.URLField(max_length=500, blank=True)
     def __str__(self):
         return self.store_name
     
