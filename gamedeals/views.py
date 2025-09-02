@@ -10,18 +10,26 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import DealsListSerializer, UserSerializer
 from .models import DealsList, StoreInfo
 from .services import DealListService, StoreListService
+from rest_framework.pagination import LimitOffsetPagination
+
 
 class DealsListViewSet(viewsets.ModelViewSet):
     queryset = DealsList.objects.all()
     serializer_class = DealsListSerializer
     
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
+        queryset = self.get_queryset().exclude(sale_price=0)
         
         if not request.user.is_authenticated:
             queryset = queryset[:3]
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+        
+        paginator = LimitOffsetPagination()
+        paginator.default_limit = 16
+        result_page = paginator.paginate_queryset(queryset, request)
+        serializer = self.get_serializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
     
     @action(detail=False, methods=['post'])
     def sync_stores(self, request):

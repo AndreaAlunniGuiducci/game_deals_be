@@ -11,7 +11,6 @@ class DealListService:
     def fetch_games(cls) -> List[Dict]:
         try:
             params = {
-                'pageSize': 16,
             }
             response = requests.get(cls.BASE_URL, params=params, timeout=10)
             response.raise_for_status()
