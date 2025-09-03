@@ -7,11 +7,13 @@ from rest_framework import generics
 from django.contrib.auth.models import User
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .serializers import DealsListSerializer, UserSerializer
 from .models import DealsList, StoreInfo
 from .services import DealListService, StoreListService
 from rest_framework.pagination import LimitOffsetPagination
-
+import logging
+logger = logging.getLogger(__name__)
 
 class DealsListViewSet(viewsets.ModelViewSet):
     queryset = DealsList.objects.all()
@@ -153,6 +155,15 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = [AllowAny]
     serializer_class = UserSerializer
+    
+    def create(self, request, *args, **kwargs):
+        username = request.data.get("username")
+        if User.objects.filter(username=username).exists():
+            return Response(
+                {"error": "Username already exists."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return super().create(request, *args, **kwargs)
 
 class LoginView(TokenObtainPairView):
     permission_classes = [AllowAny]
