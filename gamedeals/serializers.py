@@ -7,6 +7,7 @@ class StoreInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = StoreInfo
         fields = '__all__'
+
 class DealsListSerializer(serializers.ModelSerializer):
     store = StoreInfoSerializer(read_only=True)
     class Meta:
@@ -32,3 +33,8 @@ class UserSerializer(serializers.ModelSerializer):
         user.password = make_password(validated_data['password'])
         user.save()
         return user
+
+class StoreSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StoreInfo
+        fields = '__all__'

@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .serializers import DealsListSerializer, UserSerializer
+from .serializers import DealsListSerializer, UserSerializer, StoreSerializer
 from .models import DealsList, StoreInfo
 from .services import DealListService, StoreListService
 from rest_framework.pagination import LimitOffsetPagination
@@ -167,3 +167,12 @@ class RegisterView(generics.CreateAPIView):
 
 class LoginView(TokenObtainPairView):
     permission_classes = [AllowAny]
+
+class StoreView(viewsets.ReadOnlyModelViewSet):
+    queryset = StoreInfo.objects.all()
+    serializer_class = StoreSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

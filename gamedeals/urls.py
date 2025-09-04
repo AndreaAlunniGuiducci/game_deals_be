@@ -1,9 +1,10 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import DealsListViewSet, RegisterView, LoginView
+from .views import DealsListViewSet, RegisterView, LoginView, StoreView
 
 router = DefaultRouter()
 router.register(r'deals', DealsListViewSet, basename='deals')
+router.register(r'store', StoreView, basename='store')
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name="register"),
