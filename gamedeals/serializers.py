@@ -2,14 +2,14 @@ from rest_framework import serializers
 from .models import DealsList, SyncLog, StoreInfo
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-class StoreInfoSerializer(serializers.ModelSerializer):
+class StoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = StoreInfo
         fields = '__all__'
-
 class DealsListSerializer(serializers.ModelSerializer):
-    store = StoreInfoSerializer(read_only=True)
+    store = StoreSerializer(read_only=True)
     class Meta:
         model = DealsList
         fields = '__all__'
@@ -34,7 +34,8 @@ class UserSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
-class StoreSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = StoreInfo
-        fields = '__all__'
+class CustomLoginSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        data['username'] = self.user.username
+        return data

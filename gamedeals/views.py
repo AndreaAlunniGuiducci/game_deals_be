@@ -7,15 +7,14 @@ from rest_framework import generics
 from django.contrib.auth.models import User
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .serializers import DealsListSerializer, UserSerializer, StoreSerializer
+from .serializers import DealsListSerializer, UserSerializer, StoreSerializer, CustomLoginSerializer
 from .models import DealsList, StoreInfo
 from .services import DealListService, StoreListService
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
-
 import logging
+
 logger = logging.getLogger(__name__)
 
 class DealsListViewSet(viewsets.ModelViewSet):
@@ -178,6 +177,7 @@ class RegisterView(generics.CreateAPIView):
 
 class LoginView(TokenObtainPairView):
     permission_classes = [AllowAny]
+    serializer_class = CustomLoginSerializer
 
 class StoreView(viewsets.ReadOnlyModelViewSet):
     queryset = StoreInfo.objects.all()
