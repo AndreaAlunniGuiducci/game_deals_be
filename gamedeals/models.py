@@ -5,6 +5,7 @@ class DealsList(models.Model):
     store = models.ForeignKey('StoreInfo', on_delete=models.CASCADE, null=True)  
     game_name = models.CharField(max_length=200)
     image_url = models.URLField(max_length=500)
+    saving = models.DecimalField(max_digits=6, decimal_places=2, blank=True)
     sale_price = models.DecimalField(max_digits=6, decimal_places=2)
     normal_price = models.DecimalField(max_digits=6, decimal_places=2)
     deal_rating = models.CharField(max_length=50, blank=True)

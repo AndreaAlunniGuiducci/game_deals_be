@@ -12,15 +12,26 @@ from .serializers import DealsListSerializer, UserSerializer, StoreSerializer
 from .models import DealsList, StoreInfo
 from .services import DealListService, StoreListService
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
+
 import logging
 logger = logging.getLogger(__name__)
 
 class DealsListViewSet(viewsets.ModelViewSet):
     queryset = DealsList.objects.all()
     serializer_class = DealsListSerializer
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+    filterset_fields = {
+        'store__store_name': ['exact', 'icontains'],
+        'sale_price': ['exact', 'gte', 'lte'],
+        'deal_rating': ['exact', 'gte', 'lte'],
+        'game_name': ['icontains', 'exact'],
+    }
+    ordering_fields = ['sale_price', 'deal_rating', 'game_name', 'saving']
     
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset().exclude(sale_price=0)
+        queryset =  self.filter_queryset(self.get_queryset())
         
         if not request.user.is_authenticated:
             queryset = queryset[:3]
@@ -101,8 +112,6 @@ class DealsListViewSet(viewsets.ModelViewSet):
         
         with transaction.atomic():
             
-            
-            
             for game in games_data:
                 store_id = game.get('storeID', '')
             
@@ -111,7 +120,6 @@ class DealsListViewSet(viewsets.ModelViewSet):
                     try:
                         store_obj = StoreInfo.objects.get(store_id=store_id)
                     except StoreInfo.DoesNotExist:
-                        # Se lo store non esiste, crealo con dati base
                         store_obj = StoreInfo.objects.create(
                             store_id=store_id,
                             store_name=f"Store {store_id}"
@@ -121,6 +129,7 @@ class DealsListViewSet(viewsets.ModelViewSet):
                     'store': store_obj,
                     'game_name': game.get('title', 'Nome non disponibile'),
                     'image_url': game.get('thumb', ''),
+                    'saving': game.get("savings", 123),
                     'sale_price': float(game.get('salePrice', 0)),
                     'normal_price': float(game.get('normalPrice', 0)),
                     'deal_rating': float(game.get('dealRating', 0))
