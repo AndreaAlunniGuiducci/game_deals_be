@@ -25,12 +25,14 @@ class DealsListViewSet(viewsets.ModelViewSet):
         if not request.user.is_authenticated:
             queryset = queryset[:3]
             serializer = self.get_serializer(queryset, many=True)
-            return Response(serializer.data)
+            return Response({"results": serializer.data})
         
         paginator = LimitOffsetPagination()
         paginator.default_limit = 16
         result_page = paginator.paginate_queryset(queryset, request)
         serializer = self.get_serializer(result_page, many=True)
+        
+        
         return paginator.get_paginated_response(serializer.data)
     
     @action(detail=False, methods=['post'])
