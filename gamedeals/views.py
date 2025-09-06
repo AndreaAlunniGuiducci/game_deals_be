@@ -195,7 +195,9 @@ class DealsListViewSet(viewsets.ModelViewSet):
                     'saving': game.get("savings", 123),
                     'sale_price': float(game.get('salePrice', 0)),
                     'normal_price': float(game.get('normalPrice', 0)),
-                    'deal_rating': float(game.get('dealRating', 0))
+                    'deal_rating': float(game.get('dealRating', 0)),
+                    'release_date': game.get('releaseDate', ''),
+                    'rating_text': game.get('steamRatingText', '')
                 }
                 
                 deal, created = DealsList.objects.update_or_create(
