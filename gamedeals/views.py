@@ -14,8 +14,10 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 import logging
+import random
 
 logger = logging.getLogger(__name__)
+allowed_store_ids = ['1', '7', '25']
 
 class DealsListViewSet(viewsets.ModelViewSet):
     queryset = DealsList.objects.all()
@@ -31,14 +33,26 @@ class DealsListViewSet(viewsets.ModelViewSet):
     
     def list(self, request, *args, **kwargs):
         queryset =  self.filter_queryset(self.get_queryset())
-        
+
         if not request.user.is_authenticated:
-            queryset = queryset[:3]
-            serializer = self.get_serializer(queryset, many=True)
+            all_store_ids = list(queryset.values_list("store_id", flat=True).distinct())
+            
+            if len(all_store_ids) == 0:
+                return Response({"results": []})
+            
+            selected_store_ids = random.sample(all_store_ids, min(3, len(all_store_ids)))
+            
+            final_deals = []
+            for store_id in selected_store_ids:
+                deals = list(queryset.filter(store_id=store_id))
+                if deals:
+                    final_deals.append(random.choice(deals))
+            
+            serializer = self.get_serializer(final_deals, many=True)
             return Response({"results": serializer.data})
         
         paginator = LimitOffsetPagination()
-        paginator.default_limit = 16
+        paginator.default_limit = 8
         result_page = paginator.paginate_queryset(queryset, request)
         serializer = self.get_serializer(result_page, many=True)
         
@@ -64,6 +78,10 @@ class DealsListViewSet(viewsets.ModelViewSet):
                 IMAGE_BASE_URL = "https://www.cheapshark.com"
                 
                 for store in store_data:
+                    
+                    store_id = str(store.get('storeID', ''))
+                    if store_id not in allowed_store_ids:
+                        continue
                     store_obj, created = StoreInfo.objects.update_or_create(
                         store_id=str(store.get('storeID', '')),
                         defaults={
@@ -98,22 +116,67 @@ class DealsListViewSet(viewsets.ModelViewSet):
         if store_sync_response.status_code != 200:
             return store_sync_response
         
-        games_data = DealListService.fetch_games()
-                    
-        if not games_data:
+        target_store_ids = ['1', '7', '25']
+        target_stores = {
+            '1': 'Steam',
+            '7': 'Humble Bundle', 
+            '25': 'GOG'
+        }
+        
+        try:
+            all_selected_games = DealListService.fetch_games_by_stores(
+                store_ids=target_store_ids, 
+                base_games_per_store=5,
+                total_target=16
+            )
+        except Exception as e:
+            logger.error(f"Errore nel metodo fetch_games_by_stores: {e}")
+            # Fallback al metodo originale
+            games_data = DealListService.fetch_games()
+            
+            if not games_data:
+                return Response(
+                    {"error": "Impossibile recuperare i giochi dall'API CheapShark"}, 
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                )
+            
+            games_by_store = {store_id: [] for store_id in target_store_ids}
+            
+            for game in games_data:
+                store_id = game.get('storeID', '')
+                if store_id in target_store_ids:
+                    games_by_store[store_id].append(game)
+            
+            all_selected_games = []
+            max_games = 5 
+            
+            for i in range(max_games):
+                for store_id in target_store_ids:
+                    if len(games_by_store[store_id]) > i:
+                        all_selected_games.append(games_by_store[store_id][i])
+                        if len(all_selected_games) >= 16:
+                            break
+                if len(all_selected_games) >= 16:
+                    break
+        
+        all_selected_games = all_selected_games[:16]
+        
+        if not all_selected_games:
             return Response(
-                {"error": "Impossibile recuperare i giochi dall'API CheapShark"}, 
-                status=status.HTTP_503_SERVICE_UNAVAILABLE
+                {"error": "Nessun gioco trovato per gli store selezionati"}, 
+                status=status.HTTP_404_NOT_FOUND
             )
         
         created_count = 0
         updated_count = 0
+        processed_count = 0
+        store_counts = {store_id: 0 for store_id in target_store_ids}
         
         with transaction.atomic():
             
-            for game in games_data:
+            for game in all_selected_games:
                 store_id = game.get('storeID', '')
-            
+                
                 store_obj = None
                 if store_id:
                     try:
@@ -121,8 +184,9 @@ class DealsListViewSet(viewsets.ModelViewSet):
                     except StoreInfo.DoesNotExist:
                         store_obj = StoreInfo.objects.create(
                             store_id=store_id,
-                            store_name=f"Store {store_id}"
+                            store_name=target_stores.get(store_id, f"Store {store_id}")
                         )
+                        
                 deals_data = {
                     'external_id': game.get('dealID', ''),
                     'store': store_obj,
@@ -143,18 +207,29 @@ class DealsListViewSet(viewsets.ModelViewSet):
                     created_count += 1
                 else:
                     updated_count += 1
+                    
+                processed_count += 1
+                store_counts[store_id] += 1
 
         return Response({
             "message": "Sincronizzazione completata",
             "created": created_count,
-            "updated": updated_count
+            "updated": updated_count,
+            "processed": processed_count,
+            "distribution": {
+                "Steam": store_counts.get('1', 0),
+                "Humble Bundle": store_counts.get('7', 0),
+                "GOG": store_counts.get('25', 0)
+            },
+            "filtered_stores": ["Steam", "Humble Bundle", "GOG"]
         })
-
+    
     @action(detail=False, methods=['delete'])
     def delete_local_deals(self, request, pk=None):
         try:
             count = DealsList.objects.count()
             DealsList.objects.all().delete()
+            StoreInfo.objects.all().delete()
             return Response({
                 "message": f"Eliminati {count} deals"
             })
