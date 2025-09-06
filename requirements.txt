@@ -1,1 +1,20 @@
+# Django Framework
 Django~=5.1.2
+
+# Django REST Framework
+djangorestframework==3.15.2
+
+# JWT Authentication
+djangorestframework-simplejwt==5.3.0
+
+# Cron Jobs
+django-crontab==0.7.1
+
+# Filtering
+django-filter==24.3
+
+# CORS Headers
+django-cors-headers==4.6.0
+
+# HTTP Requests (per le API esterne)
+requests==2.32.3
