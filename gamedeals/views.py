@@ -48,13 +48,6 @@ class DealsListViewSet(viewsets.ModelViewSet):
     serializer_class = DealsListSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_class = DealsFilter
-    # filterset_fields = {
-    #     'store__store_name': ['exact', 'icontains'],
-    #     'sale_price': ['exact', 'gte', 'lte'],
-    #     'deal_rating': ['exact', 'gte', 'lte'],
-    #     'game_name': ['icontains', 'exact'],
-    #     'external_id': ['icontains', 'exact']
-    # }
     ordering_fields = ['sale_price', 'deal_rating', 'game_name', 'saving']
     
     def list(self, request, *args, **kwargs):
