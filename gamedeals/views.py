@@ -1,4 +1,5 @@
 from django.shortcuts import render
+import django_filters
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -15,20 +16,45 @@ from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 import logging
 import random
+from urllib.parse import unquote, quote
 
 logger = logging.getLogger(__name__)
 allowed_store_ids = ['1', '7', '25']
+class DealsFilter(django_filters.FilterSet):
+    external_id = django_filters.CharFilter(method='filter_external_id')
+    
+    def filter_external_id(self, queryset, name, value):
+        if not value:
+            return queryset
+            
+        direct_match = queryset.filter(external_id=value)
+        if direct_match.exists():
+            return direct_match
+        
+        encoded_value = quote(value, safe='')
+        return queryset.filter(external_id=encoded_value)
+    
+    class Meta:
+        model = DealsList
+        fields = {
+            'store__store_name': ['exact', 'icontains'],
+            'sale_price': ['exact', 'gte', 'lte'],
+            'deal_rating': ['exact', 'gte', 'lte'],
+            'game_name': ['icontains', 'exact'],
+        }
 
 class DealsListViewSet(viewsets.ModelViewSet):
     queryset = DealsList.objects.all()
     serializer_class = DealsListSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
-    filterset_fields = {
-        'store__store_name': ['exact', 'icontains'],
-        'sale_price': ['exact', 'gte', 'lte'],
-        'deal_rating': ['exact', 'gte', 'lte'],
-        'game_name': ['icontains', 'exact'],
-    }
+    filterset_class = DealsFilter
+    # filterset_fields = {
+    #     'store__store_name': ['exact', 'icontains'],
+    #     'sale_price': ['exact', 'gte', 'lte'],
+    #     'deal_rating': ['exact', 'gte', 'lte'],
+    #     'game_name': ['icontains', 'exact'],
+    #     'external_id': ['icontains', 'exact']
+    # }
     ordering_fields = ['sale_price', 'deal_rating', 'game_name', 'saving']
     
     def list(self, request, *args, **kwargs):
@@ -49,8 +75,8 @@ class DealsListViewSet(viewsets.ModelViewSet):
                     final_deals.append(random.choice(deals))
             
             serializer = self.get_serializer(final_deals, many=True)
+            
             return Response({"results": serializer.data})
-        
         paginator = LimitOffsetPagination()
         paginator.default_limit = 8
         result_page = paginator.paginate_queryset(queryset, request)
@@ -58,7 +84,7 @@ class DealsListViewSet(viewsets.ModelViewSet):
         
         
         return paginator.get_paginated_response(serializer.data)
-    
+          
     @action(detail=False, methods=['post'])
     def sync_stores(self, request):
 
@@ -131,7 +157,7 @@ class DealsListViewSet(viewsets.ModelViewSet):
             )
         except Exception as e:
             logger.error(f"Errore nel metodo fetch_games_by_stores: {e}")
-            # Fallback al metodo originale
+
             games_data = DealListService.fetch_games()
             
             if not games_data:
