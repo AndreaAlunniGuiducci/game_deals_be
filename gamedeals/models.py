@@ -11,6 +11,7 @@ class DealsList(models.Model):
     deal_rating = models.CharField(max_length=50, blank=True)
     release_date = models.IntegerField(blank=True)
     rating_text = models.CharField(max_length=50, blank=True, null=True)
+    deal_link = models.CharField(max_length=300, blank=True, null=True)
     def __str__(self):
         return self.game_name
     
